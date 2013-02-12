@@ -1,4 +1,4 @@
-#FTPPassiveDataClient
+#FTP Passive Data Client
 
 A passive ftp client that is for people that hate files.
 
