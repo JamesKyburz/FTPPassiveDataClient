@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 
 namespace FTPPassiveDataClient {
   public enum TransferType : short { Ascii, Binary }
-  
+
   public class Ftp : IDisposable
   {
     int lastResponse;
@@ -16,19 +16,19 @@ namespace FTPPassiveDataClient {
     StreamWriter sessionWriter;
     TcpClient session, dataSession;
     GroupCollection url;
-  
+
     const int BLOCK_SIZE = System.UInt16.MaxValue;
-  
+
     public Ftp(string url)
     {
       var match = Regex.Match(url, @"^(?i)ftp://(?<user>[^:]*):(?<password>[^:@]*)@(?<host>[^:]*):?(?<port>\d*)$");
       if (null == match) throw new ArgumentException("url is in format ftp://username:password@host[:port] port is optional");
       this.url = match.Groups;
     }
-  
+
     public int TimeoutInMilliseconds { get; set; }
     public Action<string> Log { get; set; }
-  
+
     public void RenameFile(string from, string to)
     {
       EnsureLoggedIn();
@@ -36,37 +36,37 @@ namespace FTPPassiveDataClient {
       SendCommand(String.Format("RNFR {0}", from), 350, 125);
       SendCommand(String.Format("RNTO {0}", to), 250, 125);
     }
-  
+
     bool ValidateNoWildcard(string s) { return Regex.IsMatch(s, "[*%]"); }
     void EnsureLoggedIn() { if (null == session) Login(); }
-  
+
     public void DeleteFile(string path)
     {
       EnsureLoggedIn();
       ValidateNoWildcard(path);
       SendCommand(String.Format("DELE {0}", path), 250);
     }
-  
+
     public void CreateDirectory(string path)
     {
       EnsureLoggedIn();
       ValidateNoWildcard(path);
       SendCommand(String.Format("MKD {0}", path), 250, 257, 550);
     }
-  
+
     public void DeleteDirectory(string path)
     {
       EnsureLoggedIn();
       ValidateNoWildcard(path);
       SendCommand(String.Format("RMD {0}", path), 250);
     }
-  
+
     public void SetTransferType(TransferType transferType)
     {
       EnsureLoggedIn();
       SendCommand(string.Format("TYPE {0}", transferType == TransferType.Ascii ? "A" : "I"), 200);
     }
-  
+
     public string[] FileList(string path)
     {
       EnsureLoggedIn();
@@ -80,7 +80,7 @@ namespace FTPPassiveDataClient {
         Where(x => !String.IsNullOrEmpty(x)).
         ToArray();
     }
-  
+
     public byte[] GetData(string path)
     {
       byte[] result = null;
@@ -103,7 +103,7 @@ namespace FTPPassiveDataClient {
       ProcessResponse(226, 550);
       return result;
     }
-  
+
     public void SendData(byte[] data, string path)
     {
       EnsureLoggedIn();
@@ -118,19 +118,19 @@ namespace FTPPassiveDataClient {
       );
       ProcessResponse(226, 550);
     }
-  
+
     public void ChangeDirectory(string path)
     {
       EnsureLoggedIn();
       if (path == ".") return;
       SendCommand(String.Format("CWD {0}", path), 250);
     }
-  
+
     string ProcessResponse(params int[] allowedReturnValues)
     {
       return ProcessResponse(false, allowedReturnValues);
     }
-  
+
     string ProcessResponse(bool data, params int[] allowedReturnValues)
     {
       lastResponse = 0;
@@ -156,7 +156,7 @@ namespace FTPPassiveDataClient {
         throw new IOException(string.Format("Unexpected ftp response, server said: {0}", reply));
       return reply.ToString();
     }
-  
+
     void SendDataCommand(string command, Action dataAvailable)
     {
       PrepareDataConnection();
@@ -164,26 +164,26 @@ namespace FTPPassiveDataClient {
       dataAvailable();
       DisposeData();
     }
-  
+
     string SendCommand(string command, params int[] allowedReturnValues)
     {
       sessionWriter.WriteLine(command);
       sessionWriter.Flush();
       return ProcessResponse(allowedReturnValues);
     }
-  
+
     void PrepareDataConnection()
     {
       var reply = SendCommand("PASV", 227);
-  
+
       var match = Regex.Match(reply, @"\((?:(\d+)\D*){6}\)", RegexOptions.Compiled);
-  
+
       if (null == match) throw new IOException("Unexpected ftp response setting up data connection");
-  
+
       var captures = match.Groups[1].Captures;
-  
+
       int port = (int.Parse(captures[4].Value) << 8) + int.Parse(captures[5].Value);
-  
+
       dataSession = new TcpClient();
       if (TimeoutInMilliseconds > 0)
       {
@@ -193,7 +193,7 @@ namespace FTPPassiveDataClient {
       dataSession.Connect(string.Format("{0}.{1}.{2}.{3}", captures[0].Value, captures[1].Value, captures[2].Value, captures[3].Value), port);
       dataReader = new StreamReader(dataSession.GetStream());
     }
-  
+
     void Login()
     {
       session = new TcpClient();
@@ -212,8 +212,7 @@ namespace FTPPassiveDataClient {
       if (lastResponse == 331)
         SendCommand(String.Format("PASS {0}", url["password"].Value), 230, 202);
     }
-  
-  
+
     public void Dispose()
     {
       try { SendCommand("QUIT"); }
@@ -222,7 +221,7 @@ namespace FTPPassiveDataClient {
       session = null;
       DisposeData();
     }
-  
+
     void DisposeData()
     {
       if (null != dataSession) dataSession.Close();
@@ -230,4 +229,3 @@ namespace FTPPassiveDataClient {
     }
   }
 }
-
