@@ -33,8 +33,8 @@ namespace FTPPassiveDataClient {
     {
       EnsureLoggedIn();
       ValidateNoWildcard(from);
-      SendCommand(String.Format("RNFR {0}", from), 350, 125);
-      SendCommand(String.Format("RNTO {0}", to), 250, 125);
+      SendCommand(string.Format("RNFR {0}", from), 350, 125);
+      SendCommand(string.Format("RNTO {0}", to), 250, 125);
     }
 
     bool ValidateNoWildcard(string s) { return Regex.IsMatch(s, "[*%]"); }
@@ -44,21 +44,21 @@ namespace FTPPassiveDataClient {
     {
       EnsureLoggedIn();
       ValidateNoWildcard(path);
-      SendCommand(String.Format("DELE {0}", path), 250);
+      SendCommand(string.Format("DELE {0}", path), 250);
     }
 
     public void CreateDirectory(string path)
     {
       EnsureLoggedIn();
       ValidateNoWildcard(path);
-      SendCommand(String.Format("MKD {0}", path), 250, 257, 550);
+      SendCommand(string.Format("MKD {0}", path), 250, 257, 550);
     }
 
     public void DeleteDirectory(string path)
     {
       EnsureLoggedIn();
       ValidateNoWildcard(path);
-      SendCommand(String.Format("RMD {0}", path), 250);
+      SendCommand(string.Format("RMD {0}", path), 250);
     }
 
     public void SetTransferType(TransferType transferType)
@@ -123,7 +123,7 @@ namespace FTPPassiveDataClient {
     {
       EnsureLoggedIn();
       if (path == ".") return;
-      SendCommand(String.Format("CWD {0}", path), 250);
+      SendCommand(string.Format("CWD {0}", path), 250);
     }
 
     string ProcessResponse(params int[] allowedReturnValues)
@@ -208,9 +208,9 @@ namespace FTPPassiveDataClient {
       sessionReader = new StreamReader(stream);
       sessionWriter = new StreamWriter(stream);
       ProcessResponse(220);
-      SendCommand(String.Format("USER {0}", url["user"].Value), 331, 230);
+      SendCommand(string.Format("USER {0}", url["user"].Value), 331, 230);
       if (lastResponse == 331)
-        SendCommand(String.Format("PASS {0}", url["password"].Value), 230, 202);
+        SendCommand(string.Format("PASS {0}", url["password"].Value), 230, 202);
     }
 
     public void Dispose()
